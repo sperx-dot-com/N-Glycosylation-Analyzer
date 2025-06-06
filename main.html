@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protein FASTA Analyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f4ff;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-label {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            display: inline-block;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+        
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+        
+        textarea:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .results-section {
+            margin-top: 30px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .glyco-sites {
+            background: #e8f5e8;
+            color: #2d8f2d;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        
+        .length-valid {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .length-invalid {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .scrollable-table {
+            max-height: 600px;
+            overflow-y: auto;
+            border-radius: 10px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧬 Protein FASTA Analyzer</h1>
+        
+        <div class="upload-section">
+            <label for="fastaFile" class="file-label">
+                📁 Upload FASTA File
+            </label>
+            <input type="file" id="fastaFile" accept=".fasta,.fa,.txt">
+            <p>Or paste your FASTA data below:</p>
+            <textarea id="fastaText" placeholder="Paste your FASTA sequences here..."></textarea>
+            <div>
+                <button onclick="analyzeFasta()">🔬 Analyze Proteins</button>
+                <button onclick="exportToExcel()" disabled id="exportBtn">📊 Export to Excel</button>
+            </div>
+            <div id="progressContainer" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+                <p id="progressText">Processing...</p>
+            </div>
+        </div>
+        
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="scrollable-table">
+                <table id="resultsTable"></table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let analysisResults = [];
+        
+        document.getElementById('fastaFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('fastaText').value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        function findNGlycosylationSites(sequence) {
+            const sites = [];
+            const pattern = /N[^P][ST]/g;
+            let match;
+            
+            while ((match = pattern.exec(sequence)) !== null) {
+                sites.push({
+                    position: match.index + 1,
+                    motif: match[0]
+                });
+            }
+            
+            return sites;
+        }
+        
+        function parseFastaHeader(header) {
+            const parts = header.split(' ');
+            const id = parts[0];
+            
+            // Try to parse JSON metadata
+            let metadata = {};
+            const jsonMatch = header.match(/\{.*\}/);
+            if (jsonMatch) {
+                try {
+                    metadata = JSON.parse(jsonMatch[0]);
+                } catch (e) {
+                    console.warn('Could not parse JSON metadata:', e);
+                }
+            }
+            
+            return {
+                id: id,
+                fullHeader: header,
+                ...metadata
+            };
+        }
+        
+        function analyzeFasta() {
+            const fastaText = document.getElementById('fastaText').value.trim();
+            if (!fastaText) {
+                alert('Please upload a FASTA file or paste FASTA data');
+                return;
+            }
+            
+            // Show progress
+            document.getElementById('progressContainer').style.display = 'block';
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            // Parse FASTA
+            const sequences = [];
+            const lines = fastaText.split('\n');
+            let currentHeader = '';
+            let currentSequence = '';
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.startsWith('>')) {
+                    if (currentHeader) {
+                        sequences.push({
+                            header: currentHeader,
+                            sequence: currentSequence.replace(/\s/g, '')
+                        });
+                    }
+                    currentHeader = line.substring(1);
+                    currentSequence = '';
+                } else if (line) {
+                    currentSequence += line;
+                }
+                
+                // Update progress
+                progressBar.style.width = ((i / lines.length) * 50) + '%';
+                progressText.textContent = `Reading sequences... ${Math.round((i / lines.length) * 50)}%`;
+            }
+            
+            // Add last sequence
+            if (currentHeader) {
+                sequences.push({
+                    header: currentHeader,
+                    sequence: currentSequence.replace(/\s/g, '')
+                });
+            }
+            
+            // Analyze sequences
+            analysisResults = [];
+            
+            sequences.forEach((seq, index) => {
+                const headerInfo = parseFastaHeader(seq.header);
+                const length = seq.sequence.length;
+                const glycoSites = findNGlycosylationSites(seq.sequence);
+                const isLengthValid = length > 280;
+                
+                analysisResults.push({
+                    id: headerInfo.id,
+                    fullHeader: headerInfo.fullHeader,
+                    pub_og_id: headerInfo.pub_og_id || 'N/A',
+                    og_name: headerInfo.og_name || 'N/A',
+                    organism_name: headerInfo.organism_name || 'N/A',
+                    pub_gene_id: headerInfo.pub_gene_id || 'N/A',
+                    description: headerInfo.description || 'N/A',
+                    level_taxid: headerInfo.level_taxid || 'N/A',
+                    organism_taxid: headerInfo.organism_taxid || 'N/A',
+                    length: length,
+                    isLengthValid: isLengthValid,
+                    glycoSitesCount: glycoSites.length,
+                    glycoSites: glycoSites,
+                    sequence: seq.sequence
+                });
+                
+                // Update progress
+                const progress = 50 + ((index / sequences.length) * 50);
+                progressBar.style.width = progress + '%';
+                progressText.textContent = `Analyzing proteins... ${Math.round(progress)}%`;
+            });
+            
+            // Sort by glycosylation sites count (lowest first)
+            analysisResults.sort((a, b) => a.glycoSitesCount - b.glycoSitesCount);
+            
+            // Hide progress and show results
+            document.getElementById('progressContainer').style.display = 'none';
+            displayResults();
+        }
+        
+        function displayResults() {
+            const resultsSection = document.getElementById('resultsSection');
+            const statsGrid = document.getElementById('statsGrid');
+            const resultsTable = document.getElementById('resultsTable');
+            const exportBtn = document.getElementById('exportBtn');
+            
+            // Show results section
+            resultsSection.style.display = 'block';
+            exportBtn.disabled = false;
+            
+            // Calculate stats
+            const totalProteins = analysisResults.length;
+            const validLengthProteins = analysisResults.filter(p => p.isLengthValid).length;
+            const proteinsWithGlyco = analysisResults.filter(p => p.glycoSitesCount > 0).length;
+            const avgGlycoSites = (analysisResults.reduce((sum, p) => sum + p.glycoSitesCount, 0) / totalProteins).toFixed(1);
+            
+            // Display stats
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${totalProteins}</div>
+                    <div class="stat-label">Total Proteins</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${validLengthProteins}</div>
+                    <div class="stat-label">Length > 280 AA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${proteinsWithGlyco}</div>
+                    <div class="stat-label">With N-Glyco Sites</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${avgGlycoSites}</div>
+                    <div class="stat-label">Avg Glyco Sites</div>
+                </div>
+            `;
+            
+            // Create table
+            let tableHTML = `
+                <thead>
+                    <tr>
+                        <th>Protein ID</th>
+                        <th>Organism</th>
+                        <th>Gene Name</th>
+                        <th>Description</th>
+                        <th>Length (AA)</th>
+                        <th>Length Valid</th>
+                        <th>N-Glyco Sites</th>
+                        <th>Glyco Positions</th>
+                        <th>Pub OG ID</th>
+                        <th>Gene ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            analysisResults.forEach(protein => {
+                const glycoPositions = protein.glycoSites.map(site => `${site.position}(${site.motif})`).join(', ');
+                
+                tableHTML += `
+                    <tr>
+                        <td title="${protein.fullHeader}">${protein.id}</td>
+                        <td>${protein.organism_name}</td>
+                        <td>${protein.og_name}</td>
+                        <td>${protein.description}</td>
+                        <td class="${protein.isLengthValid ? 'length-valid' : 'length-invalid'}">${protein.length}</td>
+                        <td>${protein.isLengthValid ? '✅' : '❌'}</td>
+                        <td><span class="glyco-sites">${protein.glycoSitesCount}</span></td>
+                        <td>${glycoPositions || 'None'}</td>
+                        <td>${protein.pub_og_id}</td>
+                        <td>${protein.pub_gene_id}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</tbody>';
+            resultsTable.innerHTML = tableHTML;
+        }
+        
+        function exportToExcel() {
+            if (analysisResults.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            // Prepare data for Excel
+            const excelData = analysisResults.map(protein => ({
+                'Protein_ID': protein.id,
+                'Full_Header': protein.fullHeader,
+                'Organism_Name': protein.organism_name,
+                'Gene_Name': protein.og_name,
+                'Description': protein.description,
+                'Length_AA': protein.length,
+                'Length_Valid_>280': protein.isLengthValid ? 'YES' : 'NO',
+                'N_Glycosylation_Sites_Count': protein.glycoSitesCount,
+                'Glyco_Site_Positions': protein.glycoSites.map(site => `${site.position}(${site.motif})`).join('; '),
+                'Pub_OG_ID': protein.pub_og_id,
+                'Level_Taxid': protein.level_taxid,
+                'Organism_Taxid': protein.organism_taxid,
+                'Pub_Gene_ID': protein.pub_gene_id,
+                'Sequence': protein.sequence
+            }));
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            
+            // Auto-fit columns
+            const colWidths = [];
+            Object.keys(excelData[0]).forEach((key, index) => {
+                const maxLength = Math.max(
+                    key.length,
+                    ...excelData.map(row => String(row[key]).length)
+                );
+                colWidths[index] = { wch: Math.min(maxLength + 2, 50) };
+            });
+            ws['!cols'] = colWidths;
+            
+            XLSX.utils.book_append_sheet(wb, ws, 'Protein_Analysis');
+            
+            // Save file
+            const fileName = `protein_analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+    </script>
+</body>
+</html>
