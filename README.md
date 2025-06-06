@@ -1,23 +1,22 @@
-# 🧬 Protein FASTA Analyzer - Professional GitHub Project
+# 🧬 Protein N-Glycosylation Analyzer
 
 ## 🚀 Quick Start
 
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/sperx-dot-com/N-Glycosylation-Analyze.git
-   cd protein-fasta-analyzer
+   cd protein-nglycosylation-analyzer
    ```
 
 2. **Open in browser:**
    ```bash
-   # Simply open index.html in any modern browser
+   # Simply open index.html in any browser
    open index.html  # macOS
    # or double-click index.html
    ```
 
-3. **Try with sample data:**
-   - Upload the provided `assets/sample-data.fasta`
-   - Or paste your own FASTA sequences
+3. **Try with your data:**
+   - Paste your own FASTA sequences from OrthoDB
 
 ## 🔧 Features
 
