@@ -4,7 +4,7 @@
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/protein-fasta-analyzer.git
+   git clone https://github.com/sperx-dot-com/N-Glycosylation-Analyze.git
    cd protein-fasta-analyzer
    ```
 
